@@ -35,6 +35,16 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-50: #FFF4EA;
+  --color-primary-100: #FFE4C7;
+  --color-primary-200: #FFC98A;
+  --color-primary-300: #FFA12B;
+  --color-primary-400: #FA8D23;
+  --color-primary-500: #F0731A;
+  --color-primary-600: #DC440C;
+  --color-primary-700: #B5380A;
+  --color-primary-800: #8C2B08;
+  --color-primary-900: #5F1D05;
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -55,8 +65,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: #F0731A;
+  --primary-foreground: #FFFFFF;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -90,8 +100,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: #F0731A;
+  --primary-foreground: #FFFFFF;
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -127,4 +137,8 @@
   html {
     @apply font-sans;
   }
+}
+
+.brand-gradient {
+  background: linear-gradient(180deg, #ffa12b 0%, #fa8d23 30%, #f0731a 65%, #dc440c 100%);
 }
