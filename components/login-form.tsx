@@ -61,6 +61,10 @@ export function LoginForm() {
       <Button type="submit" className="w-full">
         Sign in
       </Button>
+
+      <p className="text-center text-xs text-muted-foreground">
+        Demo login — any Gmail address and any password works.
+      </p>
     </form>
   );
 }
