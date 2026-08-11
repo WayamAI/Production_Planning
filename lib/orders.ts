@@ -1,6 +1,7 @@
 import type { CreateOrderInput, ProductionOrder, UpdateOrderInput } from "@/lib/types";
 
 const STORAGE_KEY = "wayam.production-orders";
+const SEEDED_KEY = "wayam.seeded";
 
 function readAll(): ProductionOrder[] {
   if (typeof window === "undefined") return [];
@@ -14,11 +15,9 @@ function readAll(): ProductionOrder[] {
 
 function writeAll(orders: ProductionOrder[]): void {
   if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
-  } catch {
-    // Storage unavailable/full — caller surfaces this via toast.
-  }
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+  // Any error here (storage unavailable/full) propagates to the caller,
+  // which is responsible for surfacing it (e.g. via a toast).
 }
 
 export function getOrders(): ProductionOrder[] {
@@ -59,7 +58,10 @@ export function deleteOrder(id: string): void {
 }
 
 export function seedOrdersIfEmpty(): void {
-  if (readAll().length > 0) return;
+  if (typeof window === "undefined") return;
+  if (window.localStorage.getItem(SEEDED_KEY)) return;
+
+  window.localStorage.setItem(SEEDED_KEY, "true");
 
   const today = new Date();
   const daysFromNow = (n: number) => {

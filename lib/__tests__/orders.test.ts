@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createOrder,
   deleteOrder,
@@ -8,6 +8,7 @@ import {
 } from "@/lib/orders";
 
 const STORAGE_KEY = "wayam.production-orders";
+const SEEDED_KEY = "wayam.seeded";
 
 beforeEach(() => {
   localStorage.clear();
@@ -69,13 +70,43 @@ describe("orders data layer", () => {
     expect(getOrders()).toHaveLength(0);
   });
 
-  it("seeds sample orders only when storage is empty", () => {
+  it("seeds sample orders once, tracked via a seeded flag rather than emptiness", () => {
     seedOrdersIfEmpty();
     const first = getOrders();
     expect(first.length).toBeGreaterThan(0);
+    expect(localStorage.getItem(SEEDED_KEY)).toBeTruthy();
 
     seedOrdersIfEmpty();
     const second = getOrders();
     expect(second).toHaveLength(first.length);
+  });
+
+  it("does not reseed after all orders are deleted (seeded flag persists)", () => {
+    seedOrdersIfEmpty();
+    const seeded = getOrders();
+    expect(seeded.length).toBeGreaterThan(0);
+
+    seeded.forEach((order) => deleteOrder(order.id));
+    expect(getOrders()).toHaveLength(0);
+
+    seedOrdersIfEmpty();
+    expect(getOrders()).toHaveLength(0);
+  });
+
+  it("propagates an error from createOrder when localStorage.setItem throws", () => {
+    const setItemSpy = vi.spyOn(localStorage, "setItem").mockImplementation(() => {
+      throw new Error("QuotaExceededError");
+    });
+
+    expect(() =>
+      createOrder({
+        name: "Widget batch A",
+        quantity: 100,
+        scheduledDate: "2026-09-01",
+        status: "pending",
+      })
+    ).toThrow();
+
+    setItemSpy.mockRestore();
   });
 });
