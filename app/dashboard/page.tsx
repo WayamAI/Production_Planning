@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { getOrders, seedOrdersIfEmpty } from "@/lib/orders";
 import type { ProductionOrder } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -9,17 +9,20 @@ import { OrderTable } from "@/components/dashboard/order-table";
 import { OrderTimeline } from "@/components/dashboard/order-timeline";
 import { OrderFormDialog } from "@/components/dashboard/order-form-dialog";
 
+// This page only ever renders on the client, after DashboardLayout's
+// auth-gated mount check — so reading/seeding localStorage in the lazy
+// initializer below is safe and never runs during SSR/hydration.
+function loadOrders(): ProductionOrder[] {
+  seedOrdersIfEmpty();
+  return getOrders();
+}
+
 export default function DashboardPage() {
-  const [orders, setOrders] = useState<ProductionOrder[]>([]);
+  const [orders, setOrders] = useState<ProductionOrder[]>(loadOrders);
 
   function refresh() {
     setOrders(getOrders());
   }
-
-  useEffect(() => {
-    seedOrdersIfEmpty();
-    refresh();
-  }, []);
 
   return (
     <div className="space-y-6">
