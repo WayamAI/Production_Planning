@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { createOrder, updateOrder } from "@/lib/orders";
+import { ORDER_STATUS_LABELS } from "@/lib/order-status";
 import type { OrderStatus, ProductionOrder } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,8 +37,8 @@ export function OrderFormDialog({ order, onSaved, trigger }: OrderFormDialogProp
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (open) {
+  function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen) {
       setForm(
         order
           ? {
@@ -50,7 +51,8 @@ export function OrderFormDialog({ order, onSaved, trigger }: OrderFormDialogProp
       );
       setError(null);
     }
-  }, [open, order]);
+    setOpen(nextOpen);
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -95,7 +97,7 @@ export function OrderFormDialog({ order, onSaved, trigger }: OrderFormDialogProp
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger render={trigger as React.ReactElement} />
       <DialogContent>
         <DialogHeader>
@@ -136,7 +138,9 @@ export function OrderFormDialog({ order, onSaved, trigger }: OrderFormDialogProp
               onValueChange={(value) => setForm((f) => ({ ...f, status: value as OrderStatus }))}
             >
               <SelectTrigger id="order-status">
-                <SelectValue />
+                <SelectValue>
+                  {(value: OrderStatus | null) => (value ? ORDER_STATUS_LABELS[value] : "")}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="pending">Pending</SelectItem>

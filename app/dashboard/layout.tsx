@@ -1,23 +1,35 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { isLoggedIn } from "@/lib/auth";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 
+function subscribeNoop() {
+  return () => {};
+}
+
+/** True once the component has mounted on the client (false during SSR). */
+function useMounted() {
+  return useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false
+  );
+}
+
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [checked, setChecked] = useState(false);
+  const mounted = useMounted();
+  const loggedIn = mounted && isLoggedIn();
 
   useEffect(() => {
-    if (!isLoggedIn()) {
+    if (mounted && !isLoggedIn()) {
       router.replace("/login");
-      return;
     }
-    setChecked(true);
-  }, [router]);
+  }, [mounted, router]);
 
-  if (!checked) return null;
+  if (!loggedIn) return null;
 
   return (
     <div className="min-h-screen">

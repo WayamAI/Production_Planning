@@ -23,10 +23,14 @@ export function DeleteOrderDialog({ orderId, orderName, onDeleted }: DeleteOrder
   const [open, setOpen] = useState(false);
 
   function handleDelete() {
-    deleteOrder(orderId);
-    toast.success("Order deleted");
-    setOpen(false);
-    onDeleted();
+    try {
+      deleteOrder(orderId);
+      toast.success("Order deleted");
+      setOpen(false);
+      onDeleted();
+    } catch {
+      toast.error("Could not delete the order. Storage may be unavailable.");
+    }
   }
 
   return (
