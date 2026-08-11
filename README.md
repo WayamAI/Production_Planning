@@ -1,5 +1,9 @@
 # Production Planning
 
+## Live
+
+https://production-planning-six.vercel.app
+
 Wayam AI's production planning app — demo login, production order tracking (list + timeline
 views). Built with Next.js, TypeScript, Tailwind CSS, and shadcn/ui.
 
