@@ -1,4 +1,5 @@
 import { getLots, getSuppliers } from "@/lib/traceability";
+import { getOrders } from "@/lib/orders";
 import type { BuildRecord } from "@/lib/types";
 
 interface GenealogyTreeProps {
@@ -10,6 +11,7 @@ export function GenealogyTree({ builds }: GenealogyTreeProps) {
 
   const lots = getLots();
   const suppliers = getSuppliers();
+  const orders = getOrders();
   const lotNumbers = Array.from(new Set(builds.flatMap((b) => b.lotsConsumed)));
 
   return (
@@ -34,12 +36,22 @@ export function GenealogyTree({ builds }: GenealogyTreeProps) {
               </div>
               <span className="text-muted-foreground">&rarr;</span>
               <div className="flex flex-col gap-1">
-                {consumingBuilds.map((b) => (
-                  <div key={b.serial} className="rounded-md border bg-primary-50 px-3 py-2 text-xs">
-                    <p className="font-medium">{b.serial}</p>
-                    <p className="text-muted-foreground">serial</p>
-                  </div>
-                ))}
+                {consumingBuilds.map((b) => {
+                  const order = orders.find((o) => o.id === b.orderId);
+                  return (
+                    <div key={b.serial} className="flex items-center gap-2">
+                      <div className="rounded-md border bg-primary-50 px-3 py-2 text-xs text-primary-800">
+                        <p className="font-medium">{b.serial}</p>
+                        <p className="text-muted-foreground">serial</p>
+                      </div>
+                      <span className="text-muted-foreground">&rarr;</span>
+                      <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs">
+                        <p className="font-medium">{order?.name ?? "Unknown order"}</p>
+                        <p className="text-muted-foreground">order</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );

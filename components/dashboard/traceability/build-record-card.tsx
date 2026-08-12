@@ -80,7 +80,7 @@ export function BuildRecordCard({ build, onSelectLot }: BuildRecordCardProps) {
 
       <div className="grid gap-2 sm:grid-cols-3">
         <div className="rounded-md border px-3 py-2 text-sm">
-          <span className={build.designCheckPass ? "text-primary-600" : "text-destructive"}>
+          <span className={build.designCheckPass ? "text-primary-600 dark:text-primary-400" : "text-destructive"}>
             {build.designCheckPass ? "✓" : "✗"}
           </span>{" "}
           <span className="font-medium">Design Check</span>
@@ -89,7 +89,7 @@ export function BuildRecordCard({ build, onSelectLot }: BuildRecordCardProps) {
           </p>
         </div>
         <div className="rounded-md border px-3 py-2 text-sm">
-          <span className={outOfSpec.length === 0 ? "text-primary-600" : "text-destructive"}>
+          <span className={outOfSpec.length === 0 ? "text-primary-600 dark:text-primary-400" : "text-destructive"}>
             {outOfSpec.length === 0 ? "✓" : "✗"}
           </span>{" "}
           <span className="font-medium">Process Check</span>
@@ -100,19 +100,21 @@ export function BuildRecordCard({ build, onSelectLot }: BuildRecordCardProps) {
           </p>
         </div>
         <div className="rounded-md border px-3 py-2 text-sm">
-          <span className={build.supplierCheckPass ? "text-primary-600" : "text-destructive"}>
+          <span className={build.supplierCheckPass ? "text-primary-600 dark:text-primary-400" : "text-destructive"}>
             {build.supplierCheckPass ? "✓" : "✗"}
           </span>{" "}
           <span className="font-medium">Supplier Check</span>
           <p className="text-muted-foreground">
-            {build.supplierCheckPass ? "Approved supplier, passed inspection, correct material" : "Issues: failed inspection"}
+            {build.supplierCheckPass
+              ? "Approved supplier, passed inspection, correct material"
+              : (build.supplierCheckNote ?? "Issues: failed inspection")}
           </p>
         </div>
       </div>
 
       {claims.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-primary-600">Linked Warranty Claims ({claims.length})</p>
+          <p className="text-sm font-medium text-primary-600 dark:text-primary-400">Linked Warranty Claims ({claims.length})</p>
           {claims.map((claim) => (
             <div key={claim.id} className="flex items-center justify-between border-t pt-2 text-sm">
               <span>

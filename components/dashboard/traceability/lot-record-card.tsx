@@ -13,6 +13,10 @@ export function LotRecordCard({ lot, supplier }: LotRecordCardProps) {
       </p>
       <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
         <div>
+          <p className="text-muted-foreground">Material</p>
+          <p>{lot.materialName}</p>
+        </div>
+        <div>
           <p className="text-muted-foreground">Supplier</p>
           <p>{supplier?.name ?? "Unknown"}</p>
         </div>

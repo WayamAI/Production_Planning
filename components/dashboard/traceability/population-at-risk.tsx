@@ -127,11 +127,11 @@ export function PopulationAtRisk() {
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-lg border p-4">
           <p className="text-xs text-muted-foreground uppercase">Units at Risk in Field</p>
-          <p className="text-2xl font-semibold">{funnel.atRiskInField}</p>
+          <p className="text-2xl font-semibold">{funnel.atRiskInField.toLocaleString()}</p>
         </div>
         <div className="rounded-lg border p-4">
           <p className="text-xs text-muted-foreground uppercase">Already Returned / Defective</p>
-          <p className="text-2xl font-semibold">{funnel.returnedDefective}</p>
+          <p className="text-2xl font-semibold">{funnel.returnedDefective.toLocaleString()}</p>
         </div>
         <div className="rounded-lg border p-4">
           <p className="text-xs text-muted-foreground uppercase">Containment Priority</p>
