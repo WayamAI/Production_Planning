@@ -4,8 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { logout } from "@/lib/auth";
-import { getOrders, seedOrdersIfEmpty } from "@/lib/orders";
-import { getCriticalAlerts, seedTraceabilityIfEmpty } from "@/lib/traceability";
+import { ensureTraceabilitySeeded } from "@/lib/traceability";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -16,10 +15,10 @@ const NAV_LINKS = [
   { href: "/dashboard/traceability", label: "Traceability" },
 ];
 
+// DashboardNav only ever renders on the client, after DashboardLayout's
+// auth-gated mount check, so reading/seeding here is safe.
 function loadAlertCount(): number {
-  seedOrdersIfEmpty();
-  seedTraceabilityIfEmpty(getOrders());
-  return getCriticalAlerts().length;
+  return ensureTraceabilitySeeded().length;
 }
 
 export function DashboardNav() {
