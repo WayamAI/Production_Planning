@@ -47,6 +47,16 @@ describe("buildAffectedSerialsCsv", () => {
     expect(rows[1]).toContain('"SN-TEST-001"');
     expect(rows[1]).toContain('"LOT-2026-0189"');
   });
+
+  it("doubles embedded double-quote characters per RFC 4180", () => {
+    const buildWithQuote: BuildRecord = {
+      ...sampleBuild,
+      lotsConsumed: ['LOT-2026-0189 "industrial grade"'],
+    };
+    const csv = buildAffectedSerialsCsv([buildWithQuote]);
+    const rows = csv.split("\n");
+    expect(rows[1]).toContain('"LOT-2026-0189 ""industrial grade"""');
+  });
 });
 
 describe("buildContainmentPlanText", () => {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createOrder } from "@/lib/orders";
+import { createOrder, deleteOrder } from "@/lib/orders";
 import { getOrders } from "@/lib/orders";
 import {
   getBuildRecords,
@@ -68,6 +68,31 @@ describe("seedTraceabilityIfEmpty", () => {
     expect(builds.some((b) => b.qcResult === "conditional" || b.qcResult === "fail")).toBe(true);
     expect(getWarrantyClaims().length).toBe(2);
   });
+
+  it("generates build records for orders created after the first seed call, leaving prior builds untouched", () => {
+    createOrder({ name: "Widget batch A", quantity: 300, scheduledDate: "2026-09-01", status: "done" });
+    seedTraceabilityIfEmpty(getOrders());
+    const firstBuilds = getBuildRecords();
+
+    const orderB = createOrder({ name: "Widget batch B", quantity: 300, scheduledDate: "2026-09-02", status: "done" });
+    seedTraceabilityIfEmpty(getOrders());
+    const secondBuilds = getBuildRecords();
+
+    expect(secondBuilds.some((b) => b.orderId === orderB.id)).toBe(true);
+    const preservedFirstBuilds = secondBuilds.filter((b) => firstBuilds.some((f) => f.serial === b.serial));
+    expect(preservedFirstBuilds).toEqual(firstBuilds);
+  });
+
+  it("prunes build records for orders that have since been deleted", () => {
+    const orderA = createOrder({ name: "Widget batch A", quantity: 300, scheduledDate: "2026-09-01", status: "done" });
+    createOrder({ name: "Widget batch B", quantity: 300, scheduledDate: "2026-09-02", status: "done" });
+    seedTraceabilityIfEmpty(getOrders());
+
+    deleteOrder(orderA.id);
+    seedTraceabilityIfEmpty(getOrders());
+
+    expect(getBuildRecords().some((b) => b.orderId === orderA.id)).toBe(false);
+  });
 });
 
 describe("searchTrace", () => {
@@ -114,8 +139,7 @@ describe("getPopulationAtRisk", () => {
   it("keeps each funnel stage at or below the stage before it", () => {
     const funnel = getPopulationAtRisk({});
     expect(funnel.lotUsedInBuild).toBeLessThanOrEqual(funnel.totalProduced);
-    expect(funnel.assembledPassedQc).toBeLessThanOrEqual(funnel.lotUsedInBuild);
-    expect(funnel.shippedToField).toBeLessThanOrEqual(funnel.assembledPassedQc);
+    expect(funnel.shippedToField).toBeLessThanOrEqual(funnel.lotUsedInBuild);
     expect(funnel.atRiskInField).toBeLessThanOrEqual(funnel.shippedToField);
     expect(funnel.returnedDefective).toBeLessThanOrEqual(funnel.shippedToField);
   });
@@ -124,6 +148,8 @@ describe("getPopulationAtRisk", () => {
     const filtered = getPopulationAtRisk({ lotNumber: "LOT-2026-0189" });
     expect(filtered.lotUsedInBuild).toBeGreaterThan(0);
     expect(filtered.affectedSerials.every((b) => b.lotsConsumed.includes("LOT-2026-0189"))).toBe(true);
+    expect(filtered.atRiskInField).toBeGreaterThanOrEqual(1);
+    expect(filtered.returnedDefective).toBeGreaterThanOrEqual(1);
   });
 
   it("narrows the funnel when filtered by workCentre", () => {

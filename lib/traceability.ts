@@ -1,9 +1,8 @@
-import type { BuildRecord, FunnelResult, MaterialLot, PopulationFilters, ProcessParam, ProductionOrder, Supplier, WarrantyClaim } from "@/lib/types";
-import { getOrders } from "@/lib/orders";
+import type { BuildRecord, CriticalAlert, FunnelResult, MaterialLot, PopulationFilters, ProcessParam, ProductionOrder, Supplier, TraceResult, WarrantyClaim } from "@/lib/types";
+import { getOrders, seedOrdersIfEmpty } from "@/lib/orders";
 
 const BUILDS_KEY = "wayam.traceability.builds";
 const CLAIMS_KEY = "wayam.traceability.claims";
-const SEEDED_KEY = "wayam.traceability.seeded";
 
 export const SUPPLIER_POOL: Supplier[] = [
   { id: "SUP-01", name: "Galaxy Surfactants", approved: true },
@@ -49,7 +48,7 @@ function mulberry32(seed: number): () => number {
 }
 
 function pick<T>(items: T[], rand: () => number): T {
-  return items[Math.floor(rand() * items.length) % items.length];
+  return items[Math.floor(rand() * items.length)];
 }
 
 function readJson<T>(key: string): T[] {
@@ -85,7 +84,7 @@ export function getWarrantyClaims(): WarrantyClaim[] {
 
 function generateBuildRecord(order: ProductionOrder, index: number, rand: () => number): BuildRecord {
   const lotIndices = new Set<number>();
-  while (lotIndices.size < 3) {
+  while (lotIndices.size < Math.min(3, LOT_POOL.length)) {
     lotIndices.add(Math.floor(rand() * LOT_POOL.length));
   }
   const lotsConsumed = Array.from(lotIndices).map((i) => LOT_POOL[i].lotNumber);
@@ -96,7 +95,7 @@ function generateBuildRecord(order: ProductionOrder, index: number, rand: () => 
   ];
 
   return {
-    serial: `SN-${order.id.replace(/-/g, "").slice(0, 4).toUpperCase()}-${String(index + 1).padStart(3, "0")}`,
+    serial: `SN-${order.id.replace(/-/g, "").slice(0, 8).toUpperCase()}-${String(index + 1).padStart(3, "0")}`,
     orderId: order.id,
     assemblyDate: order.scheduledDate,
     workCentre: pick(WORK_CENTRES, rand),
@@ -143,30 +142,48 @@ function buildWarrantyClaimsFor(build: BuildRecord): WarrantyClaim[] {
 
 export function seedTraceabilityIfEmpty(orders: ProductionOrder[]): void {
   if (typeof window === "undefined") return;
-  if (window.localStorage.getItem(SEEDED_KEY)) return;
   if (orders.length === 0) return;
 
-  window.localStorage.setItem(SEEDED_KEY, "true");
+  const existingBuilds = getBuildRecords();
+  const isFirstSeed = existingBuilds.length === 0;
 
-  const sortedOrders = [...orders].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  const builds: BuildRecord[] = [];
+  const orderIds = new Set(orders.map((o) => o.id));
+  const prunedBuilds = existingBuilds.filter((b) => orderIds.has(b.orderId));
 
-  for (const order of sortedOrders) {
+  const orderIdsWithBuilds = new Set(prunedBuilds.map((b) => b.orderId));
+  const newOrders = orders.filter((o) => !orderIdsWithBuilds.has(o.id));
+
+  if (newOrders.length === 0) {
+    if (prunedBuilds.length !== existingBuilds.length) {
+      writeJson(BUILDS_KEY, prunedBuilds);
+      const remainingSerials = new Set(prunedBuilds.map((b) => b.serial));
+      writeJson(CLAIMS_KEY, getWarrantyClaims().filter((c) => remainingSerials.has(c.serial)));
+    }
+    return;
+  }
+
+  const sortedNewOrders = [...newOrders].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const newBuilds: BuildRecord[] = [];
+  for (const order of sortedNewOrders) {
     const rand = mulberry32(hashString(order.id));
     const serialCount = Math.min(5, Math.max(1, Math.round(order.quantity / 150)));
     for (let i = 0; i < serialCount; i++) {
-      builds.push(generateBuildRecord(order, i, rand));
+      newBuilds.push(generateBuildRecord(order, i, rand));
     }
   }
 
-  applyFailedLotThread(builds[0]);
-  applyProcessDeviationThread(builds[1] ?? builds[0]);
+  let claims = getWarrantyClaims();
+  if (isFirstSeed) {
+    applyFailedLotThread(newBuilds[0]);
+    applyProcessDeviationThread(newBuilds[1] ?? newBuilds[0]);
+    claims = buildWarrantyClaimsFor(newBuilds[0]);
+  }
 
-  writeJson(BUILDS_KEY, builds);
-  writeJson(CLAIMS_KEY, buildWarrantyClaimsFor(builds[0]));
+  writeJson(BUILDS_KEY, [...prunedBuilds, ...newBuilds]);
+  writeJson(CLAIMS_KEY, claims);
 }
 
-export function searchTrace(query: string) {
+export function searchTrace(query: string): TraceResult {
   const q = query.trim().toLowerCase();
   if (!q) return { builds: [] as BuildRecord[] };
 
@@ -201,7 +218,7 @@ export function searchTrace(query: string) {
   };
 }
 
-export function getCriticalAlerts() {
+export function getCriticalAlerts(): CriticalAlert[] {
   return getBuildRecords()
     .filter((b) => b.qcResult !== "pass")
     .map((b) => ({
@@ -217,11 +234,14 @@ export function getPopulationAtRisk(filters: PopulationFilters): FunnelResult {
   const all = getBuildRecords();
   const totalProduced = all.length;
 
+  const supplierLots = filters.supplierId
+    ? LOT_POOL.filter((l) => l.supplierId === filters.supplierId).map((l) => l.lotNumber)
+    : [];
+
   const matchesFilters = (b: BuildRecord) => {
     if (filters.lotNumber && !b.lotsConsumed.includes(filters.lotNumber)) return false;
     if (filters.workCentre && b.workCentre !== filters.workCentre) return false;
     if (filters.supplierId) {
-      const supplierLots = LOT_POOL.filter((l) => l.supplierId === filters.supplierId).map((l) => l.lotNumber);
       if (!b.lotsConsumed.some((l) => supplierLots.includes(l))) return false;
     }
     return true;
@@ -229,7 +249,7 @@ export function getPopulationAtRisk(filters: PopulationFilters): FunnelResult {
 
   const lotUsedInBuild = all.filter(matchesFilters);
   const assembledPassedQc = lotUsedInBuild.filter((b) => b.qcResult !== "fail");
-  const shippedToField = assembledPassedQc.filter((b) => b.shipped);
+  const shippedToField = lotUsedInBuild.filter((b) => b.shipped);
   const atRisk = shippedToField.filter((b) => b.qcResult !== "pass");
   const returnedDefective = shippedToField.filter((b) => b.returned);
 
@@ -250,4 +270,10 @@ export function getContainmentPriority(funnel: Pick<FunnelResult, "shippedToFiel
   if (ratio >= 0.7) return "Critical" as const;
   if (ratio >= 0.4) return "Moderate" as const;
   return "Low" as const;
+}
+
+export function ensureTraceabilitySeeded(): CriticalAlert[] {
+  seedOrdersIfEmpty();
+  seedTraceabilityIfEmpty(getOrders());
+  return getCriticalAlerts();
 }
