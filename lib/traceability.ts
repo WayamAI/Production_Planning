@@ -244,7 +244,7 @@ export function getPopulationAtRisk(filters: PopulationFilters): FunnelResult {
   };
 }
 
-export function getContainmentPriority(funnel: FunnelResult): "Critical" | "Moderate" | "Low" {
+export function getContainmentPriority(funnel: Pick<FunnelResult, "shippedToField" | "atRiskInField">): "Critical" | "Moderate" | "Low" {
   if (funnel.shippedToField === 0) return "Low" as const;
   const ratio = funnel.atRiskInField / funnel.shippedToField;
   if (ratio >= 0.7) return "Critical" as const;
