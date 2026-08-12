@@ -4,7 +4,9 @@ import { getOrders } from "@/lib/orders";
 import {
   getBuildRecords,
   getCriticalAlerts,
+  getContainmentPriority,
   getLots,
+  getPopulationAtRisk,
   getSuppliers,
   getWarrantyClaims,
   searchTrace,
@@ -99,5 +101,38 @@ describe("getCriticalAlerts", () => {
     createOrder({ name: "Widget batch B", quantity: 300, scheduledDate: "2026-09-02", status: "done" });
     seedTraceabilityIfEmpty(getOrders());
     expect(getCriticalAlerts().length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("getPopulationAtRisk", () => {
+  beforeEach(() => {
+    createOrder({ name: "Widget batch A", quantity: 300, scheduledDate: "2026-09-01", status: "done" });
+    createOrder({ name: "Widget batch B", quantity: 300, scheduledDate: "2026-09-02", status: "done" });
+    seedTraceabilityIfEmpty(getOrders());
+  });
+
+  it("keeps each funnel stage at or below the stage before it", () => {
+    const funnel = getPopulationAtRisk({});
+    expect(funnel.lotUsedInBuild).toBeLessThanOrEqual(funnel.totalProduced);
+    expect(funnel.assembledPassedQc).toBeLessThanOrEqual(funnel.lotUsedInBuild);
+    expect(funnel.shippedToField).toBeLessThanOrEqual(funnel.assembledPassedQc);
+    expect(funnel.atRiskInField).toBeLessThanOrEqual(funnel.shippedToField);
+    expect(funnel.returnedDefective).toBeLessThanOrEqual(funnel.shippedToField);
+  });
+
+  it("narrows the funnel when filtered to the suspect lot", () => {
+    const filtered = getPopulationAtRisk({ lotNumber: "LOT-2026-0189" });
+    expect(filtered.lotUsedInBuild).toBeGreaterThan(0);
+    expect(filtered.affectedSerials.every((b) => b.lotsConsumed.includes("LOT-2026-0189"))).toBe(true);
+  });
+});
+
+describe("getContainmentPriority", () => {
+  it("labels Critical when at least 70% of shipped units are at risk", () => {
+    expect(getContainmentPriority({ shippedToField: 10, atRiskInField: 7 })).toBe("Critical");
+  });
+
+  it("labels Low when nothing has shipped", () => {
+    expect(getContainmentPriority({ shippedToField: 0, atRiskInField: 0 })).toBe("Low");
   });
 });

@@ -212,3 +212,42 @@ export function getCriticalAlerts() {
       query: b.serial,
     }));
 }
+
+export function getPopulationAtRisk(filters: { lotNumber?: string; supplierId?: string; workCentre?: string }) {
+  const all = getBuildRecords();
+  const totalProduced = all.length;
+
+  const matchesFilters = (b: BuildRecord) => {
+    if (filters.lotNumber && !b.lotsConsumed.includes(filters.lotNumber)) return false;
+    if (filters.workCentre && b.workCentre !== filters.workCentre) return false;
+    if (filters.supplierId) {
+      const supplierLots = LOT_POOL.filter((l) => l.supplierId === filters.supplierId).map((l) => l.lotNumber);
+      if (!b.lotsConsumed.some((l) => supplierLots.includes(l))) return false;
+    }
+    return true;
+  };
+
+  const lotUsedInBuild = all.filter(matchesFilters);
+  const assembledPassedQc = lotUsedInBuild.filter((b) => b.qcResult !== "fail");
+  const shippedToField = assembledPassedQc.filter((b) => b.shipped);
+  const atRisk = shippedToField.filter((b) => b.qcResult !== "pass");
+  const returnedDefective = shippedToField.filter((b) => b.returned);
+
+  return {
+    totalProduced,
+    lotUsedInBuild: lotUsedInBuild.length,
+    assembledPassedQc: assembledPassedQc.length,
+    shippedToField: shippedToField.length,
+    atRiskInField: atRisk.length,
+    returnedDefective: returnedDefective.length,
+    affectedSerials: atRisk,
+  };
+}
+
+export function getContainmentPriority(funnel: { shippedToField: number; atRiskInField: number }) {
+  if (funnel.shippedToField === 0) return "Low" as const;
+  const ratio = funnel.atRiskInField / funnel.shippedToField;
+  if (ratio >= 0.7) return "Critical" as const;
+  if (ratio >= 0.4) return "Moderate" as const;
+  return "Low" as const;
+}
