@@ -1,4 +1,4 @@
-import type { BuildRecord, MaterialLot, ProcessParam, ProductionOrder, Supplier, WarrantyClaim } from "@/lib/types";
+import type { BuildRecord, FunnelResult, MaterialLot, PopulationFilters, ProcessParam, ProductionOrder, Supplier, WarrantyClaim } from "@/lib/types";
 import { getOrders } from "@/lib/orders";
 
 const BUILDS_KEY = "wayam.traceability.builds";
@@ -213,7 +213,7 @@ export function getCriticalAlerts() {
     }));
 }
 
-export function getPopulationAtRisk(filters: { lotNumber?: string; supplierId?: string; workCentre?: string }) {
+export function getPopulationAtRisk(filters: PopulationFilters): FunnelResult {
   const all = getBuildRecords();
   const totalProduced = all.length;
 
@@ -244,7 +244,7 @@ export function getPopulationAtRisk(filters: { lotNumber?: string; supplierId?: 
   };
 }
 
-export function getContainmentPriority(funnel: { shippedToField: number; atRiskInField: number }) {
+export function getContainmentPriority(funnel: FunnelResult): "Critical" | "Moderate" | "Low" {
   if (funnel.shippedToField === 0) return "Low" as const;
   const ratio = funnel.atRiskInField / funnel.shippedToField;
   if (ratio >= 0.7) return "Critical" as const;

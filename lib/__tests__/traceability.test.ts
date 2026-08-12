@@ -125,6 +125,26 @@ describe("getPopulationAtRisk", () => {
     expect(filtered.lotUsedInBuild).toBeGreaterThan(0);
     expect(filtered.affectedSerials.every((b) => b.lotsConsumed.includes("LOT-2026-0189"))).toBe(true);
   });
+
+  it("narrows the funnel when filtered by workCentre", () => {
+    const all = getPopulationAtRisk({});
+    const builds = getBuildRecords();
+    const targetWorkCentre = builds[0].workCentre;
+
+    const filtered = getPopulationAtRisk({ workCentre: targetWorkCentre });
+    expect(filtered.lotUsedInBuild).toBeGreaterThan(0);
+    expect(filtered.lotUsedInBuild).toBeLessThanOrEqual(all.lotUsedInBuild);
+    expect(filtered.affectedSerials.every((b) => b.workCentre === targetWorkCentre)).toBe(true);
+  });
+
+  it("narrows the funnel when filtered by supplierId", () => {
+    const all = getPopulationAtRisk({});
+    const filtered = getPopulationAtRisk({ supplierId: "SUP-01" });
+
+    expect(filtered.lotUsedInBuild).toBeGreaterThan(0);
+    expect(filtered.lotUsedInBuild).toBeLessThanOrEqual(all.lotUsedInBuild);
+    expect(filtered.affectedSerials.every((b) => b.lotsConsumed.some((lot) => ["LOT-2026-0178", "LOT-2026-0189", "LOT-2026-0230"].includes(lot)))).toBe(true);
+  });
 });
 
 describe("getContainmentPriority", () => {
