@@ -18,3 +18,82 @@ export interface CreateOrderInput {
 }
 
 export type UpdateOrderInput = Partial<CreateOrderInput>;
+
+export interface Supplier {
+  id: string;
+  name: string;
+  approved: boolean;
+}
+
+export interface MaterialLot {
+  lotNumber: string;
+  materialName: string;
+  supplierId: string;
+  supplierLotNumber: string;
+  heatNumber: string;
+  grDate: string; // ISO date
+  coCRef: string;
+  inspectionResult: "passed" | "failed";
+  gradeNote?: string;
+}
+
+export interface ProcessParam {
+  name: string;
+  value: number;
+  specMin: number;
+  specMax: number;
+  unit: string;
+}
+
+export type QcResult = "pass" | "conditional" | "fail";
+
+export interface BuildRecord {
+  serial: string;
+  orderId: string;
+  assemblyDate: string;
+  workCentre: string;
+  operator: string;
+  lotsConsumed: string[];
+  qcResult: QcResult;
+  processParams: ProcessParam[];
+  designCheckPass: boolean;
+  supplierCheckPass: boolean;
+  supplierCheckNote?: string;
+  shipped: boolean;
+  returned: boolean;
+}
+
+export interface WarrantyClaim {
+  id: string;
+  serial: string;
+  customer: string;
+  description: string;
+  status: "open" | "investigating" | "resolved";
+}
+
+export interface CriticalAlert {
+  label: string;
+  query: string;
+}
+
+export interface TraceResult {
+  builds: BuildRecord[];
+  lot?: MaterialLot;
+  supplier?: Supplier;
+}
+
+export interface PopulationFilters {
+  lotNumber?: string;
+  supplierId?: string;
+  workCentre?: string;
+}
+
+export interface FunnelResult {
+  totalProduced: number;
+  lotUsedInBuild: number;
+  assembledPassedQc: number;
+  shippedToField: number;
+  atRiskInField: number;
+  returnedDefective: number;
+  affectedSerials: BuildRecord[];
+}
