@@ -1,4 +1,5 @@
 import type { BuildRecord, MaterialLot, ProcessParam, ProductionOrder, Supplier, WarrantyClaim } from "@/lib/types";
+import { getOrders } from "@/lib/orders";
 
 const BUILDS_KEY = "wayam.traceability.builds";
 const CLAIMS_KEY = "wayam.traceability.claims";
@@ -163,4 +164,51 @@ export function seedTraceabilityIfEmpty(orders: ProductionOrder[]): void {
 
   writeJson(BUILDS_KEY, builds);
   writeJson(CLAIMS_KEY, buildWarrantyClaimsFor(builds[0]));
+}
+
+export function searchTrace(query: string) {
+  const q = query.trim().toLowerCase();
+  if (!q) return { builds: [] as BuildRecord[] };
+
+  const builds = getBuildRecords();
+
+  const bySerial = builds.filter((b) => b.serial.toLowerCase() === q);
+  if (bySerial.length > 0) return { builds: bySerial };
+
+  const lot = LOT_POOL.find((l) => l.lotNumber.toLowerCase() === q);
+  if (lot) {
+    const supplier = SUPPLIER_POOL.find((s) => s.id === lot.supplierId);
+    return {
+      builds: builds.filter((b) => b.lotsConsumed.includes(lot.lotNumber)),
+      lot,
+      supplier,
+    };
+  }
+
+  const matchedOrderIds = new Set(
+    getOrders()
+      .filter((order) => order.name.toLowerCase().includes(q))
+      .map((order) => order.id)
+  );
+  if (matchedOrderIds.size > 0) {
+    return { builds: builds.filter((b) => matchedOrderIds.has(b.orderId)) };
+  }
+
+  return {
+    builds: builds.filter(
+      (b) => b.serial.toLowerCase().includes(q) || b.lotsConsumed.some((l) => l.toLowerCase().includes(q))
+    ),
+  };
+}
+
+export function getCriticalAlerts() {
+  return getBuildRecords()
+    .filter((b) => b.qcResult !== "pass")
+    .map((b) => ({
+      label:
+        b.qcResult === "fail"
+          ? `Suspect lot ${b.lotsConsumed[0]} in active production — ${b.serial}`
+          : `Process deviation at assembly — ${b.serial}`,
+      query: b.serial,
+    }));
 }

@@ -3,9 +3,11 @@ import { createOrder } from "@/lib/orders";
 import { getOrders } from "@/lib/orders";
 import {
   getBuildRecords,
+  getCriticalAlerts,
   getLots,
   getSuppliers,
   getWarrantyClaims,
+  searchTrace,
   seedTraceabilityIfEmpty,
 } from "@/lib/traceability";
 
@@ -63,5 +65,39 @@ describe("seedTraceabilityIfEmpty", () => {
     ).toBe(true);
     expect(builds.some((b) => b.qcResult === "conditional" || b.qcResult === "fail")).toBe(true);
     expect(getWarrantyClaims().length).toBe(2);
+  });
+});
+
+describe("searchTrace", () => {
+  beforeEach(() => {
+    createOrder({ name: "Widget batch A", quantity: 300, scheduledDate: "2026-09-01", status: "done" });
+    seedTraceabilityIfEmpty(getOrders());
+  });
+
+  it("finds a build record by exact serial", () => {
+    const [build] = getBuildRecords();
+    const result = searchTrace(build.serial);
+    expect(result.builds).toHaveLength(1);
+    expect(result.builds[0].serial).toBe(build.serial);
+  });
+
+  it("finds every build consuming a lot, plus the upstream lot and supplier", () => {
+    const result = searchTrace("LOT-2026-0189");
+    expect(result.lot?.lotNumber).toBe("LOT-2026-0189");
+    expect(result.supplier?.id).toBe("SUP-01");
+    expect(result.builds.length).toBeGreaterThan(0);
+    expect(result.builds.every((b) => b.lotsConsumed.includes("LOT-2026-0189"))).toBe(true);
+  });
+
+  it("returns an empty result for a query with no matches", () => {
+    expect(searchTrace("does-not-exist").builds).toEqual([]);
+  });
+});
+
+describe("getCriticalAlerts", () => {
+  it("reports at least one alert once problem threads are seeded", () => {
+    createOrder({ name: "Widget batch B", quantity: 300, scheduledDate: "2026-09-02", status: "done" });
+    seedTraceabilityIfEmpty(getOrders());
+    expect(getCriticalAlerts().length).toBeGreaterThanOrEqual(1);
   });
 });
