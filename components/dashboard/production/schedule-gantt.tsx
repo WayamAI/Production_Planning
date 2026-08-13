@@ -31,10 +31,11 @@ export function ScheduleGantt({ orders }: ScheduleGanttProps) {
 
   const windowStart = useMemo(() => {
     const today = new Date(new Date().toDateString());
-    if (orders.length === 0) return today;
-    const earliest = orders.reduce(
+    const inFlightOrders = orders.filter((o) => o.status !== "completed");
+    if (inFlightOrders.length === 0) return today;
+    const earliest = inFlightOrders.reduce(
       (min, o) => (toDate(o.scheduledDate) < min ? toDate(o.scheduledDate) : min),
-      toDate(orders[0].scheduledDate)
+      toDate(inFlightOrders[0].scheduledDate)
     );
     return earliest < today ? earliest : today;
   }, [orders]);
