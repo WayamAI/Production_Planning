@@ -154,3 +154,35 @@ export interface ScheduleUpdate {
   actor: string;
   orderId?: string;
 }
+
+export interface OverviewMetric {
+  label: string;
+  value: string;
+  trend?: string;
+  tone: "critical" | "warning" | "good";
+}
+
+export interface StockExhaustionAlert {
+  id: string;
+  material: string;
+  quantity: string;
+  daysOfCoverage: number;
+  action: "Raise PO" | "Review" | "Monitor";
+}
+
+export interface MissingScanException {
+  id: string;
+  workOrderCode: string;
+  part: string;
+  station: string;
+  shift: "Shift A" | "Shift B" | "Shift C";
+  date: string;
+  resolved: boolean;
+}
+
+export interface MrpRunStatus {
+  lastRun: string;
+  durationSeconds: number;
+  plannedOrders: number;
+  exceptions: number;
+}

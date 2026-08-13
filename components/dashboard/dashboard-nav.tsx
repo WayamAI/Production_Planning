@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
+  { href: "/dashboard/overview", label: "Overview" },
   { href: "/dashboard", label: "Orders" },
   { href: "/dashboard/production", label: "Production" },
   { href: "/dashboard/traceability", label: "Traceability" },
