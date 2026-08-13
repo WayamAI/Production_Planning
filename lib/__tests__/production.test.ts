@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createOrder } from "@/lib/orders";
-import { formatWorkOrderId, getTraceScore } from "@/lib/production";
+import { formatWorkOrderId, getConstraints, getTraceScore } from "@/lib/production";
 import type { BuildRecord, ProductionOrder } from "@/lib/types";
 
 const BUILDS_KEY = "wayam.traceability.builds";
@@ -92,5 +92,40 @@ describe("formatWorkOrderId", () => {
     const order = createOrder(ORDER_INPUT);
     const formatted = formatWorkOrderId(order);
     expect(formatted).toMatch(/^WO-[0-9A-F]{6}$/);
+  });
+});
+
+describe("getConstraints", () => {
+  it("is deterministic and idempotent given the same orders", () => {
+    createOrder({ ...ORDER_INPUT, status: "on_hold" });
+    const first = getConstraints();
+    const second = getConstraints();
+    expect(second).toEqual(first);
+  });
+
+  it("creates a linked constraint for every on_hold order", () => {
+    const order = createOrder({ ...ORDER_INPUT, status: "on_hold" });
+    const constraints = getConstraints();
+    expect(constraints.some((c) => c.orderId === order.id)).toBe(true);
+  });
+
+  it("creates a linked constraint for every overdue order", () => {
+    const order = createOrder({ ...ORDER_INPUT, status: "overdue" });
+    const constraints = getConstraints();
+    expect(constraints.some((c) => c.orderId === order.id)).toBe(true);
+  });
+
+  it("includes flavor constraints even with no on_hold/overdue orders", () => {
+    createOrder({ ...ORDER_INPUT, status: "in_progress" });
+    const constraints = getConstraints();
+    expect(constraints.length).toBeGreaterThan(0);
+    expect(constraints.every((c) => c.orderId === undefined)).toBe(true);
+  });
+
+  it("assigns each constraint a unique id", () => {
+    createOrder({ ...ORDER_INPUT, status: "on_hold" });
+    const constraints = getConstraints();
+    const ids = new Set(constraints.map((c) => c.id));
+    expect(ids.size).toBe(constraints.length);
   });
 });

@@ -113,3 +113,27 @@ export interface FunnelResult {
   returnedDefective: number;
   affectedSerials: BuildRecord[];
 }
+
+export type ConstraintType =
+  | "material_shortage"
+  | "machine_maintenance"
+  | "capacity_overload"
+  | "labour_shortage"
+  | "quality_hold"
+  | "utility_outage";
+
+export type ConstraintSeverity = "high" | "medium" | "low";
+export type ConstraintStatus = "open" | "mitigated" | "scheduled" | "resolved";
+
+export interface Constraint {
+  id: string;
+  type: ConstraintType;
+  resource: string;
+  impact: string;
+  severity: ConstraintSeverity;
+  date: string; // ISO date
+  resolution: string;
+  status: ConstraintStatus;
+  owner: string;
+  orderId?: string;
+}
