@@ -27,7 +27,7 @@ const WORK_CENTRES = ["WC-01 Mixing", "WC-02 Filling", "WC-03 Packaging"];
 const OPERATORS = ["OP-045 Suresh P.", "OP-023 Anita D.", "OP-067 Mohan K.", "OP-012 Priya S."];
 const WARRANTY_CUSTOMERS = ["Reliance Retail", "BigBasket"];
 
-function hashString(value: string): number {
+export function hashString(value: string): number {
   let h = 1779033703 ^ value.length;
   for (let i = 0; i < value.length; i++) {
     h = Math.imul(h ^ value.charCodeAt(i), 3432918353);
@@ -36,7 +36,7 @@ function hashString(value: string): number {
   return h >>> 0;
 }
 
-function mulberry32(seed: number): () => number {
+export function mulberry32(seed: number): () => number {
   let a = seed;
   return function random() {
     a |= 0;
@@ -47,7 +47,7 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-function pick<T>(items: T[], rand: () => number): T {
+export function pick<T>(items: T[], rand: () => number): T {
   return items[Math.floor(rand() * items.length)];
 }
 
@@ -105,7 +105,7 @@ function generateBuildRecord(order: ProductionOrder, index: number, rand: () => 
     processParams,
     designCheckPass: true,
     supplierCheckPass: true,
-    shipped: order.status === "done",
+    shipped: order.status === "completed",
     returned: false,
   };
 }

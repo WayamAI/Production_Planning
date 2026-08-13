@@ -1,10 +1,22 @@
-export type OrderStatus = "pending" | "in_progress" | "done";
+export type OrderStatus =
+  | "draft"
+  | "released"
+  | "in_progress"
+  | "completed"
+  | "on_hold"
+  | "overdue";
+
+export type ProductionLine = "Line 1" | "Line 2" | "Line 3" | "Line 4";
 
 export interface ProductionOrder {
   id: string;
   name: string;
   quantity: number;
+  producedQty: number;
   scheduledDate: string; // ISO date, e.g. "2026-08-20"
+  dueDate: string; // ISO date
+  line: ProductionLine;
+  bomVersion: string;
   status: OrderStatus;
   createdAt: string;
   updatedAt: string;
@@ -13,7 +25,11 @@ export interface ProductionOrder {
 export interface CreateOrderInput {
   name: string;
   quantity: number;
+  producedQty: number;
   scheduledDate: string;
+  dueDate: string;
+  line: ProductionLine;
+  bomVersion: string;
   status: OrderStatus;
 }
 
@@ -96,4 +112,45 @@ export interface FunnelResult {
   atRiskInField: number;
   returnedDefective: number;
   affectedSerials: BuildRecord[];
+}
+
+export type ConstraintType =
+  | "material_shortage"
+  | "machine_maintenance"
+  | "capacity_overload"
+  | "labour_shortage"
+  | "quality_hold"
+  | "utility_outage";
+
+export type ConstraintSeverity = "high" | "medium" | "low";
+export type ConstraintStatus = "open" | "mitigated" | "scheduled" | "resolved";
+
+export interface Constraint {
+  id: string;
+  type: ConstraintType;
+  resource: string;
+  impact: string;
+  severity: ConstraintSeverity;
+  date: string; // ISO date
+  resolution: string;
+  status: ConstraintStatus;
+  owner: string;
+  orderId?: string;
+}
+
+export type ScheduleUpdateType =
+  | "production_start"
+  | "completion"
+  | "quantity_update"
+  | "delay_alert"
+  | "qc_passed"
+  | "material_receipt";
+
+export interface ScheduleUpdate {
+  id: string;
+  type: ScheduleUpdateType;
+  description: string;
+  minutesAgo: number;
+  actor: string;
+  orderId?: string;
 }

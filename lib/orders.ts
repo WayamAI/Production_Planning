@@ -71,11 +71,56 @@ export function seedOrdersIfEmpty(): void {
   };
 
   const seed: Array<CreateOrderInput> = [
-    { name: "Widget batch A", quantity: 500, scheduledDate: daysFromNow(2), status: "pending" },
-    { name: "Widget batch B", quantity: 250, scheduledDate: daysFromNow(-1), status: "in_progress" },
-    { name: "Gasket run 12", quantity: 1200, scheduledDate: daysFromNow(-5), status: "done" },
-    { name: "Bracket order 7", quantity: 80, scheduledDate: daysFromNow(5), status: "pending" },
-    { name: "Housing batch C", quantity: 300, scheduledDate: daysFromNow(1), status: "in_progress" },
+    {
+      name: "Widget batch A",
+      quantity: 500,
+      producedQty: 0,
+      scheduledDate: daysFromNow(2),
+      dueDate: daysFromNow(4),
+      line: "Line 1",
+      bomVersion: "v1.0",
+      status: "draft",
+    },
+    {
+      name: "Widget batch B",
+      quantity: 250,
+      producedQty: 180,
+      scheduledDate: daysFromNow(-1),
+      dueDate: daysFromNow(2),
+      line: "Line 2",
+      bomVersion: "v2.1",
+      status: "in_progress",
+    },
+    {
+      name: "Gasket run 12",
+      quantity: 1200,
+      producedQty: 1200,
+      scheduledDate: daysFromNow(-5),
+      dueDate: daysFromNow(-2),
+      line: "Line 3",
+      bomVersion: "v1.4",
+      status: "completed",
+    },
+    {
+      name: "Bracket order 7",
+      quantity: 80,
+      producedQty: 0,
+      scheduledDate: daysFromNow(5),
+      dueDate: daysFromNow(7),
+      line: "Line 4",
+      bomVersion: "v3.0",
+      status: "released",
+    },
+    {
+      name: "Housing batch C",
+      quantity: 300,
+      producedQty: 90,
+      scheduledDate: daysFromNow(1),
+      dueDate: daysFromNow(3),
+      line: "Line 1",
+      bomVersion: "v2.0",
+      status: "on_hold",
+    },
   ];
 
   seed.forEach((input) => createOrder(input));

@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
   { href: "/dashboard", label: "Orders" },
+  { href: "/dashboard/production", label: "Production" },
   { href: "/dashboard/traceability", label: "Traceability" },
 ];
 
