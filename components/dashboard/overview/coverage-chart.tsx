@@ -11,7 +11,7 @@ export function CoverageChart() {
   const maxValue = Math.max(...trend.flatMap((point) => Object.values(point.series)), 1);
 
   function toXY(index: number, value: number): [number, number] {
-    const x = PADDING + (index / (trend.length - 1)) * (WIDTH - PADDING * 2);
+    const x = PADDING + (index / Math.max(1, trend.length - 1)) * (WIDTH - PADDING * 2);
     const y = HEIGHT - PADDING - (value / maxValue) * (HEIGHT - PADDING * 2);
     return [x, y];
   }

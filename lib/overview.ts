@@ -72,6 +72,7 @@ export function getMockMetrics(): OverviewMetric[] {
   // module lands. Never randomized: a stable demo is more useful than a
   // shifting one for something with no real source data yet.
   return [
+    { label: "Mean RCA Time", value: "14.7 hrs", trend: "Target < 12 hrs", tone: "warning" }, // Traceability module (RCA workflow not yet tracked)
     { label: "Materials at Risk", value: "14 SKUs", trend: "↑ from 9 last week", tone: "critical" }, // Inventory module
     { label: "Open Purchase Orders", value: "87", trend: "₹4.2 Cr value", tone: "warning" }, // Purchase module
     { label: "Inventory Health", value: "74 / 100", trend: "Below 80 target", tone: "warning" }, // Inventory module

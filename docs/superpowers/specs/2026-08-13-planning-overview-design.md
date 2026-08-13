@@ -194,3 +194,20 @@ New branch `feature/planning-overview`, forked from `feature/production-module` 
 since it depends on `lib/production.ts`'s `getTraceScore`. Same incremental-commit,
 Subagent-Driven Development, task-reviewed, final-whole-branch-reviewed workflow as the prior
 two modules.
+
+
+## Implementation Notes (post-final-review)
+
+Two deliberate deviations from this spec's literal card enumeration, recorded here so a
+future fidelity audit of this page starts from an accurate baseline:
+
+- **Card ordering is grouped by data provenance, not by the reference's semantic rows.** The
+  page renders all 5 live-computed cards first, then the 10 mock-preview cards, rather than
+  interleaving them into the reference's original 5/4/6 row grouping. This was judged better
+  for a preview build: every genuinely real number is visually grouped together, making it
+  easy to see at a glance what this page can actually back up today versus what's still
+  waiting on a future module.
+- **"Mean RCA Time" was initially omitted from the 15-card count** during implementation
+  (shipped as 14 cards) and was added back as a 10th mock-preview entry in a post-final-review
+  fix pass, once the final whole-branch review caught the gap against this spec's own
+  reference audit.

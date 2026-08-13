@@ -108,9 +108,9 @@ describe("getLiveMetrics", () => {
 });
 
 describe("getMockMetrics", () => {
-  it("returns nine correctly-typed metrics", () => {
+  it("returns ten correctly-typed metrics", () => {
     const metrics = getMockMetrics();
-    expect(metrics).toHaveLength(9);
+    expect(metrics).toHaveLength(10);
     metrics.forEach((m) => {
       expect(typeof m.label).toBe("string");
       expect(typeof m.value).toBe("string");
