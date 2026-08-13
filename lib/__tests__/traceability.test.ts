@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createOrder, deleteOrder } from "@/lib/orders";
 import { getOrders } from "@/lib/orders";
+import type { CreateOrderInput } from "@/lib/types";
 import {
   getBuildRecords,
   getCriticalAlerts,
@@ -12,6 +13,20 @@ import {
   searchTrace,
   seedTraceabilityIfEmpty,
 } from "@/lib/traceability";
+
+function makeOrderInput(overrides: Partial<CreateOrderInput> = {}): CreateOrderInput {
+  return {
+    name: "Widget batch A",
+    quantity: 300,
+    producedQty: 300,
+    scheduledDate: "2026-09-01",
+    dueDate: "2026-09-08",
+    line: "Line 1",
+    bomVersion: "v1.0",
+    status: "completed",
+    ...overrides,
+  };
+}
 
 beforeEach(() => {
   localStorage.clear();
@@ -32,12 +47,7 @@ describe("seedTraceabilityIfEmpty", () => {
   });
 
   it("seeds one build record per generated serial, all linked to the source order", () => {
-    const order = createOrder({
-      name: "Widget batch A",
-      quantity: 300,
-      scheduledDate: "2026-09-01",
-      status: "done",
-    });
+    const order = createOrder(makeOrderInput());
 
     seedTraceabilityIfEmpty(getOrders());
     const builds = getBuildRecords();
@@ -47,7 +57,7 @@ describe("seedTraceabilityIfEmpty", () => {
   });
 
   it("is deterministic and idempotent across repeated calls", () => {
-    createOrder({ name: "Widget batch A", quantity: 300, scheduledDate: "2026-09-01", status: "done" });
+    createOrder(makeOrderInput());
     seedTraceabilityIfEmpty(getOrders());
     const first = getBuildRecords();
 
@@ -58,7 +68,7 @@ describe("seedTraceabilityIfEmpty", () => {
   });
 
   it("injects a failed-lot thread and a process-deviation thread", () => {
-    createOrder({ name: "Widget batch A", quantity: 300, scheduledDate: "2026-09-01", status: "done" });
+    createOrder(makeOrderInput());
     seedTraceabilityIfEmpty(getOrders());
     const builds = getBuildRecords();
 
@@ -70,22 +80,26 @@ describe("seedTraceabilityIfEmpty", () => {
   });
 
   it("generates build records for orders created after the first seed call, leaving prior builds untouched", () => {
-    createOrder({ name: "Widget batch A", quantity: 300, scheduledDate: "2026-09-01", status: "done" });
+    createOrder(makeOrderInput());
     seedTraceabilityIfEmpty(getOrders());
     const firstBuilds = getBuildRecords();
 
-    const orderB = createOrder({ name: "Widget batch B", quantity: 300, scheduledDate: "2026-09-02", status: "done" });
+    const orderB = createOrder(
+      makeOrderInput({ name: "Widget batch B", scheduledDate: "2026-09-02" })
+    );
     seedTraceabilityIfEmpty(getOrders());
     const secondBuilds = getBuildRecords();
 
     expect(secondBuilds.some((b) => b.orderId === orderB.id)).toBe(true);
-    const preservedFirstBuilds = secondBuilds.filter((b) => firstBuilds.some((f) => f.serial === b.serial));
+    const preservedFirstBuilds = secondBuilds.filter((b) =>
+      firstBuilds.some((f) => f.serial === b.serial)
+    );
     expect(preservedFirstBuilds).toEqual(firstBuilds);
   });
 
   it("prunes build records for orders that have since been deleted", () => {
-    const orderA = createOrder({ name: "Widget batch A", quantity: 300, scheduledDate: "2026-09-01", status: "done" });
-    createOrder({ name: "Widget batch B", quantity: 300, scheduledDate: "2026-09-02", status: "done" });
+    const orderA = createOrder(makeOrderInput());
+    createOrder(makeOrderInput({ name: "Widget batch B", scheduledDate: "2026-09-02" }));
     seedTraceabilityIfEmpty(getOrders());
 
     deleteOrder(orderA.id);
@@ -97,7 +111,7 @@ describe("seedTraceabilityIfEmpty", () => {
 
 describe("searchTrace", () => {
   beforeEach(() => {
-    createOrder({ name: "Widget batch A", quantity: 300, scheduledDate: "2026-09-01", status: "done" });
+    createOrder(makeOrderInput());
     seedTraceabilityIfEmpty(getOrders());
   });
 
@@ -123,7 +137,7 @@ describe("searchTrace", () => {
 
 describe("getCriticalAlerts", () => {
   it("reports at least one alert once problem threads are seeded", () => {
-    createOrder({ name: "Widget batch B", quantity: 300, scheduledDate: "2026-09-02", status: "done" });
+    createOrder(makeOrderInput({ name: "Widget batch B", scheduledDate: "2026-09-02" }));
     seedTraceabilityIfEmpty(getOrders());
     expect(getCriticalAlerts().length).toBeGreaterThanOrEqual(1);
   });
@@ -131,8 +145,8 @@ describe("getCriticalAlerts", () => {
 
 describe("getPopulationAtRisk", () => {
   beforeEach(() => {
-    createOrder({ name: "Widget batch A", quantity: 300, scheduledDate: "2026-09-01", status: "done" });
-    createOrder({ name: "Widget batch B", quantity: 300, scheduledDate: "2026-09-02", status: "done" });
+    createOrder(makeOrderInput());
+    createOrder(makeOrderInput({ name: "Widget batch B", scheduledDate: "2026-09-02" }));
     seedTraceabilityIfEmpty(getOrders());
   });
 
@@ -147,7 +161,9 @@ describe("getPopulationAtRisk", () => {
   it("narrows the funnel when filtered to the suspect lot", () => {
     const filtered = getPopulationAtRisk({ lotNumber: "LOT-2026-0189" });
     expect(filtered.lotUsedInBuild).toBeGreaterThan(0);
-    expect(filtered.affectedSerials.every((b) => b.lotsConsumed.includes("LOT-2026-0189"))).toBe(true);
+    expect(filtered.affectedSerials.every((b) => b.lotsConsumed.includes("LOT-2026-0189"))).toBe(
+      true
+    );
     expect(filtered.atRiskInField).toBeGreaterThanOrEqual(1);
     expect(filtered.returnedDefective).toBeGreaterThanOrEqual(1);
   });
@@ -169,7 +185,13 @@ describe("getPopulationAtRisk", () => {
 
     expect(filtered.lotUsedInBuild).toBeGreaterThan(0);
     expect(filtered.lotUsedInBuild).toBeLessThanOrEqual(all.lotUsedInBuild);
-    expect(filtered.affectedSerials.every((b) => b.lotsConsumed.some((lot) => ["LOT-2026-0178", "LOT-2026-0189", "LOT-2026-0230"].includes(lot)))).toBe(true);
+    expect(
+      filtered.affectedSerials.every((b) =>
+        b.lotsConsumed.some((lot) =>
+          ["LOT-2026-0178", "LOT-2026-0189", "LOT-2026-0230"].includes(lot)
+        )
+      )
+    ).toBe(true);
   });
 });
 

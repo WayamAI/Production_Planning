@@ -1,10 +1,22 @@
-export type OrderStatus = "pending" | "in_progress" | "done";
+export type OrderStatus =
+  | "draft"
+  | "released"
+  | "in_progress"
+  | "completed"
+  | "on_hold"
+  | "overdue";
+
+export type ProductionLine = "Line 1" | "Line 2" | "Line 3" | "Line 4";
 
 export interface ProductionOrder {
   id: string;
   name: string;
   quantity: number;
+  producedQty: number;
   scheduledDate: string; // ISO date, e.g. "2026-08-20"
+  dueDate: string; // ISO date
+  line: ProductionLine;
+  bomVersion: string;
   status: OrderStatus;
   createdAt: string;
   updatedAt: string;
@@ -13,7 +25,11 @@ export interface ProductionOrder {
 export interface CreateOrderInput {
   name: string;
   quantity: number;
+  producedQty: number;
   scheduledDate: string;
+  dueDate: string;
+  line: ProductionLine;
+  bomVersion: string;
   status: OrderStatus;
 }
 

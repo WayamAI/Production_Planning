@@ -105,7 +105,7 @@ function generateBuildRecord(order: ProductionOrder, index: number, rand: () => 
     processParams,
     designCheckPass: true,
     supplierCheckPass: true,
-    shipped: order.status === "done",
+    shipped: order.status === "completed",
     returned: false,
   };
 }
