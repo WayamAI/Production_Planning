@@ -1,6 +1,6 @@
 import { getOrders } from "@/lib/orders";
-import { getBuildRecords, hashString, mulberry32, pick } from "@/lib/traceability";
-import type { Constraint, ConstraintStatus, ConstraintType, ProductionOrder } from "@/lib/types";
+import { getBuildRecords, getLots, getSuppliers, hashString, mulberry32, pick } from "@/lib/traceability";
+import type { Constraint, ConstraintStatus, ConstraintType, ProductionOrder, ScheduleUpdate, ScheduleUpdateType } from "@/lib/types";
 
 export interface TraceScore {
   percent: number;
@@ -116,4 +116,101 @@ export function getConstraints(): Constraint[] {
   });
 
   return constraints;
+}
+
+export function formatRelativeTime(minutesAgo: number): string {
+  if (minutesAgo < 60) return `${minutesAgo} min ago`;
+  const hours = Math.round((minutesAgo / 60) * 2) / 2;
+  return `${hours} hr ago`;
+}
+
+export function getScheduleUpdates(): ScheduleUpdate[] {
+  const updates: ScheduleUpdate[] = [];
+
+  getOrders().forEach((order) => {
+    const rand = mulberry32(hashString(`update-${order.id}`));
+
+    if (order.status === "in_progress" || order.status === "completed") {
+      updates.push({
+        id: `U-${order.id}-start`,
+        type: "production_start",
+        description: `${order.name} — ${order.line} started batch production`,
+        minutesAgo: Math.round(30 + rand() * 200),
+        actor: "System",
+        orderId: order.id,
+      });
+    }
+
+    if (order.status === "completed") {
+      updates.push({
+        id: `U-${order.id}-complete`,
+        type: "completion",
+        description: `${order.name} — ${order.producedQty} units completed, sent to QC`,
+        minutesAgo: Math.round(5 + rand() * 60),
+        actor: pick(PLANT_STAFF, rand),
+        orderId: order.id,
+      });
+    } else if (order.producedQty > 0) {
+      const pct = Math.round((order.producedQty / order.quantity) * 100);
+      updates.push({
+        id: `U-${order.id}-qty`,
+        type: "quantity_update",
+        description: `${order.name} — produced ${order.producedQty} of ${order.quantity} (${pct}%)`,
+        minutesAgo: Math.round(10 + rand() * 90),
+        actor: "System",
+        orderId: order.id,
+      });
+    }
+
+    if (order.status === "on_hold") {
+      updates.push({
+        id: `U-${order.id}-delay`,
+        type: "delay_alert",
+        description: `${order.name} delayed — on hold`,
+        minutesAgo: Math.round(5 + rand() * 40),
+        actor: "System",
+        orderId: order.id,
+      });
+    }
+  });
+
+  getBuildRecords().forEach((build) => {
+    const rand = mulberry32(hashString(`update-build-${build.serial}`));
+
+    if (build.qcResult === "fail") {
+      updates.push({
+        id: `U-${build.serial}-delay`,
+        type: "delay_alert",
+        description: `${build.serial} — ${build.supplierCheckNote ?? "QC issue detected"}`,
+        minutesAgo: Math.round(2 + rand() * 30),
+        actor: "QC Lab",
+        orderId: build.orderId,
+      });
+    } else {
+      updates.push({
+        id: `U-${build.serial}-qc`,
+        type: "qc_passed",
+        description: `Batch ${build.serial} — all quality parameters within specification`,
+        minutesAgo: Math.round(15 + rand() * 120),
+        actor: "QC Lab",
+        orderId: build.orderId,
+      });
+    }
+  });
+
+  getLots()
+    .slice(0, 3)
+    .forEach((lot, i) => {
+      const rand = mulberry32(hashString(`update-lot-${lot.lotNumber}`));
+      const supplier = getSuppliers().find((s) => s.id === lot.supplierId);
+      updates.push({
+        id: `U-lot-${lot.lotNumber}`,
+        type: "material_receipt",
+        description: `${lot.lotNumber} — ${lot.materialName} received from ${supplier?.name ?? "supplier"}`,
+        minutesAgo: Math.round(60 + i * 45 + rand() * 60),
+        actor: "Warehouse",
+      });
+    });
+
+  return updates.sort((a, b) => a.minutesAgo - b.minutesAgo);
 }

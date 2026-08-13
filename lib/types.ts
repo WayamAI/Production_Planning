@@ -137,3 +137,20 @@ export interface Constraint {
   owner: string;
   orderId?: string;
 }
+
+export type ScheduleUpdateType =
+  | "production_start"
+  | "completion"
+  | "quantity_update"
+  | "delay_alert"
+  | "qc_passed"
+  | "material_receipt";
+
+export interface ScheduleUpdate {
+  id: string;
+  type: ScheduleUpdateType;
+  description: string;
+  minutesAgo: number;
+  actor: string;
+  orderId?: string;
+}

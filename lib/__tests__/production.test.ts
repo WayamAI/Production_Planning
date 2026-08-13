@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createOrder } from "@/lib/orders";
-import { formatWorkOrderId, getConstraints, getTraceScore } from "@/lib/production";
+import { createOrder, getOrders } from "@/lib/orders";
+import { formatRelativeTime, formatWorkOrderId, getConstraints, getScheduleUpdates, getTraceScore } from "@/lib/production";
 import type { BuildRecord, ProductionOrder } from "@/lib/types";
 
 const BUILDS_KEY = "wayam.traceability.builds";
@@ -127,5 +127,48 @@ describe("getConstraints", () => {
     const constraints = getConstraints();
     const ids = new Set(constraints.map((c) => c.id));
     expect(ids.size).toBe(constraints.length);
+  });
+});
+
+describe("getScheduleUpdates", () => {
+  it("is deterministic and idempotent given the same source data", () => {
+    createOrder({ ...ORDER_INPUT, status: "in_progress" });
+    const first = getScheduleUpdates();
+    const second = getScheduleUpdates();
+    expect(second).toEqual(first);
+  });
+
+  it("sorts entries from most to least recent", () => {
+    createOrder({ ...ORDER_INPUT, status: "completed" });
+    const updates = getScheduleUpdates();
+    const minutes = updates.map((u) => u.minutesAgo);
+    expect(minutes).toEqual([...minutes].sort((a, b) => a - b));
+  });
+
+  it("only references orders that currently exist", () => {
+    createOrder({ ...ORDER_INPUT, status: "in_progress" });
+    const orderIds = new Set(getOrders().map((o) => o.id));
+    getScheduleUpdates().forEach((u) => {
+      if (u.orderId) expect(orderIds.has(u.orderId)).toBe(true);
+    });
+  });
+
+  it("produces a production-start entry for in-progress orders", () => {
+    const order = createOrder({ ...ORDER_INPUT, status: "in_progress" });
+    const updates = getScheduleUpdates();
+    expect(
+      updates.some((u) => u.orderId === order.id && u.type === "production_start")
+    ).toBe(true);
+  });
+});
+
+describe("formatRelativeTime", () => {
+  it("formats under an hour in minutes", () => {
+    expect(formatRelativeTime(45)).toBe("45 min ago");
+  });
+
+  it("formats an hour or more in hours", () => {
+    expect(formatRelativeTime(90)).toBe("1.5 hr ago");
+    expect(formatRelativeTime(120)).toBe("2 hr ago");
   });
 });
