@@ -55,6 +55,11 @@ const FLAVOR_CONSTRAINTS: Array<{
   },
 ];
 
+function isLogicallyOverdue(order: ProductionOrder): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  return order.status !== "completed" && order.dueDate < today;
+}
+
 function orderConstraint(order: ProductionOrder, index: number): Constraint | null {
   const rand = mulberry32(hashString(`constraint-${order.id}`));
 
@@ -73,7 +78,7 @@ function orderConstraint(order: ProductionOrder, index: number): Constraint | nu
     };
   }
 
-  if (order.status === "overdue") {
+  if (order.status === "overdue" || isLogicallyOverdue(order)) {
     return {
       id: `C-${String(index).padStart(3, "0")}`,
       type: "capacity_overload",

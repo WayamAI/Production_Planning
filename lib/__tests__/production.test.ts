@@ -115,6 +115,16 @@ describe("getConstraints", () => {
     expect(constraints.some((c) => c.orderId === order.id)).toBe(true);
   });
 
+  it("creates a linked constraint for an order that is logically overdue (past due date, not completed) even without the literal 'overdue' status", () => {
+    const order = createOrder({
+      ...ORDER_INPUT,
+      status: "in_progress",
+      dueDate: "2020-01-01",
+    });
+    const constraints = getConstraints();
+    expect(constraints.some((c) => c.orderId === order.id)).toBe(true);
+  });
+
   it("includes flavor constraints even with no on_hold/overdue orders", () => {
     createOrder({ ...ORDER_INPUT, status: "in_progress" });
     const constraints = getConstraints();
