@@ -9,7 +9,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getConstraints } from "@/lib/production";
+import { getOrders } from "@/lib/orders";
+import { formatWorkOrderId, getConstraints } from "@/lib/production";
 import {
   CONSTRAINT_SEVERITY_CLASSES,
   CONSTRAINT_STATUS_CLASSES,
@@ -18,6 +19,7 @@ import {
 
 export function ConstraintsTable() {
   const constraints = useMemo(() => getConstraints(), []);
+  const orders = useMemo(() => getOrders(), []);
 
   const counts = useMemo(
     () => ({
@@ -64,35 +66,39 @@ export function ConstraintsTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {constraints.map((c) => (
-            <TableRow key={c.id}>
-              <TableCell className="font-mono text-xs">{c.id}</TableCell>
-              <TableCell>{CONSTRAINT_TYPE_LABELS[c.type]}</TableCell>
-              <TableCell>{c.resource}</TableCell>
-              <TableCell className="max-w-xs truncate" title={c.impact}>
-                {c.impact}
-              </TableCell>
-              <TableCell>
-                <span
-                  className={`rounded px-1.5 py-0.5 text-xs ${CONSTRAINT_SEVERITY_CLASSES[c.severity]}`}
-                >
-                  {c.severity}
-                </span>
-              </TableCell>
-              <TableCell>{c.date}</TableCell>
-              <TableCell className="max-w-xs truncate" title={c.resolution}>
-                {c.resolution}
-              </TableCell>
-              <TableCell>
-                <span
-                  className={`rounded px-1.5 py-0.5 text-xs ${CONSTRAINT_STATUS_CLASSES[c.status]}`}
-                >
-                  {c.status}
-                </span>
-              </TableCell>
-              <TableCell>{c.owner}</TableCell>
-            </TableRow>
-          ))}
+          {constraints.map((c) => {
+            const order = orders.find((o) => o.id === c.orderId);
+            return (
+              <TableRow key={c.id}>
+                <TableCell className="font-mono text-xs">{c.id}</TableCell>
+                <TableCell>{CONSTRAINT_TYPE_LABELS[c.type]}</TableCell>
+                <TableCell>{c.resource}</TableCell>
+                <TableCell className="max-w-xs truncate" title={c.impact}>
+                  {c.impact}
+                  {order && <> · {formatWorkOrderId(order)}</>}
+                </TableCell>
+                <TableCell>
+                  <span
+                    className={`rounded px-1.5 py-0.5 text-xs ${CONSTRAINT_SEVERITY_CLASSES[c.severity]}`}
+                  >
+                    {c.severity}
+                  </span>
+                </TableCell>
+                <TableCell>{c.date}</TableCell>
+                <TableCell className="max-w-xs truncate" title={c.resolution}>
+                  {c.resolution}
+                </TableCell>
+                <TableCell>
+                  <span
+                    className={`rounded px-1.5 py-0.5 text-xs ${CONSTRAINT_STATUS_CLASSES[c.status]}`}
+                  >
+                    {c.status}
+                  </span>
+                </TableCell>
+                <TableCell>{c.owner}</TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>
