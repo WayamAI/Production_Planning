@@ -1,6 +1,6 @@
 import { getOrders } from "@/lib/orders";
 import { getBuildRecords, getLots, getSuppliers, hashString, mulberry32, pick } from "@/lib/traceability";
-import type { Constraint, ConstraintStatus, ConstraintType, ProductionOrder, ScheduleUpdate, ScheduleUpdateType } from "@/lib/types";
+import type { Constraint, ConstraintStatus, ConstraintType, ProductionOrder, ScheduleUpdate } from "@/lib/types";
 
 export interface TraceScore {
   percent: number;
