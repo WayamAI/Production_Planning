@@ -154,3 +154,10 @@ export interface ScheduleUpdate {
   actor: string;
   orderId?: string;
 }
+
+export interface OverviewMetric {
+  label: string;
+  value: string;
+  trend?: string;
+  tone: "critical" | "warning" | "good";
+}
