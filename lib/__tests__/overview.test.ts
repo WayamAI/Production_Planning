@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createOrder } from "@/lib/orders";
-import { getLiveMetrics, getMockMetrics } from "@/lib/overview";
+import { getLiveMetrics, getMockMetrics, getTraceCompletenessByLine, getMaterialCoverageTrend, getMissingScanExceptions, getMrpRunStatus, getStockExhaustionAlerts } from "@/lib/overview";
 import type { BuildRecord, ProductionOrder } from "@/lib/types";
 
 const BUILDS_KEY = "wayam.traceability.builds";
@@ -116,5 +116,47 @@ describe("getMockMetrics", () => {
       expect(typeof m.value).toBe("string");
       expect(["critical", "warning", "good"]).toContain(m.tone);
     });
+  });
+});
+
+describe("getTraceCompletenessByLine", () => {
+  it("groups build records by work centre and computes pass percentage", () => {
+    const order = createOrder(ORDER_INPUT);
+    writeBuilds([
+      makeBuild(order, { workCentre: "WC-01 Mixing" }),
+      makeBuild(order, { workCentre: "WC-01 Mixing", qcResult: "fail" }),
+      makeBuild(order, { workCentre: "WC-02 Filling" }),
+    ]);
+    const byLine = getTraceCompletenessByLine();
+    const mixing = byLine.find((l) => l.line === "WC-01 Mixing");
+    const filling = byLine.find((l) => l.line === "WC-02 Filling");
+    expect(mixing?.value).toBe(50);
+    expect(filling?.value).toBe(100);
+  });
+
+  it("returns an empty array when there are no build records", () => {
+    expect(getTraceCompletenessByLine()).toEqual([]);
+  });
+});
+
+describe("mock data getters", () => {
+  it("getMrpRunStatus returns correctly-typed data", () => {
+    const status = getMrpRunStatus();
+    expect(status.plannedOrders).toBeGreaterThan(0);
+    expect(status.exceptions).toBeGreaterThanOrEqual(0);
+  });
+
+  it("getStockExhaustionAlerts returns a non-empty list", () => {
+    expect(getStockExhaustionAlerts().length).toBeGreaterThan(0);
+  });
+
+  it("getMissingScanExceptions returns a non-empty list with at least one resolved entry", () => {
+    const exceptions = getMissingScanExceptions();
+    expect(exceptions.length).toBeGreaterThan(0);
+    expect(exceptions.some((e) => e.resolved)).toBe(true);
+  });
+
+  it("getMaterialCoverageTrend returns 8 weeks of data", () => {
+    expect(getMaterialCoverageTrend()).toHaveLength(8);
   });
 });
