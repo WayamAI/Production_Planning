@@ -1,13 +1,11 @@
 # MatrixOps — Application Documentation
 
 **Product:** MatrixOps — Material Planning & ERP
-**Vendor:** Joules to Watts
+**Vendor:** Wayam AI
 **Domain:** Manufacturing / Process Industries (FMCG, Chemicals, Discrete Assembly)
 **Stack:** React 18 + Vite + TypeScript + Tailwind CSS + shadcn/ui + Recharts + React Router
-**Live URLs:**
-- Preview: https://id-preview--186eebbe-503c-42a1-b3f6-15fb8cc06dc4.lovable.app
-- Published: https://ops-flow-india.lovable.app
-- Custom Domain: https://prodplanner.joulestowatts.online
+**Live URL:**
+- Production: https://production-planning-six.vercel.app
 
 ---
 
@@ -273,7 +271,7 @@ Each arrow is bidirectionally navigable in the UI.
 
 ## 7. Branding & Identity
 
-- **Logo:** Joules to Watts mark, centered above the wordmark in the sidebar.
+- **Logo:** Wayam AI mark, centered above the wordmark in the sidebar.
 - **Wordmark:** "MatrixOps" with subheading "Material Planning & ERP", left-aligned beneath the logo.
 - **Accent color:** Teal (used for primary links such as batch numbers like `B-2026-0412`).
 - **Status badges:** Approved (green), Quarantine (amber), Pending (neutral), Failed (red) — consistent across every module.
@@ -282,7 +280,7 @@ Each arrow is bidirectionally navigable in the UI.
 
 ## 8. Roadmap-Ready Extension Points
 
-- Lovable Cloud backend hookup (auth, persistence, edge functions).
+- Real backend hookup (auth, persistence, edge functions) to replace the current demo-mode login.
 - Real-time sync activity log on the Integration Hub.
 - 30-day uptime/error trend charts per integration.
 - Visual genealogy flowchart for batch tracking.
